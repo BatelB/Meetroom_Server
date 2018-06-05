@@ -1,0 +1,1 @@
+typeSearchIndex = [{"p":"com.ratsoftware.meetingroomscheduler","l":"ClientSocket"},{"p":"com.ratsoftware.meetingroomscheduler","l":"Socket1"},{"p":"com.ratsoftware.meetingroomscheduler","l":"Utils"},{"p":"com.ratsoftware.meetingroomscheduler","l":"Variables"}]

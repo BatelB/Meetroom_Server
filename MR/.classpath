@@ -1,11 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8"/>
-	<classpathentry kind="lib" path="C:/Users/Batel/Desktop/drive-download-20180604T131159Z-001/java-json.jar"/>
-	<classpathentry kind="lib" path="C:/Users/Batel/Desktop/drive-download-20180604T131159Z-001/jaxp-ri-5.2.0.jar"/>
-	<classpathentry kind="lib" path="C:/Users/Batel/Desktop/drive-download-20180604T131159Z-001/json-20170516.jar"/>
-	<classpathentry kind="lib" path="C:/Users/Batel/Desktop/drive-download-20180604T131159Z-001/mysql-connector-java-5.1.41-bin.jar"/>
-	<classpathentry kind="lib" path="C:/Users/Batel/Desktop/drive-download-20180604T131159Z-001/org.osgi.foundation-1.2.0.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8">
+		<attributes>
+			<attribute name="module" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="dependency/java-json.jar"/>
+	<classpathentry kind="lib" path="dependency/jaxp-ri-5.2.0.jar"/>
+	<classpathentry kind="lib" path="dependency/json-20170516.jar"/>
+	<classpathentry kind="lib" path="dependency/mysql-connector-java-5.1.41-bin.jar"/>
+	<classpathentry kind="lib" path="dependency/org.osgi.foundation-1.2.0.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
