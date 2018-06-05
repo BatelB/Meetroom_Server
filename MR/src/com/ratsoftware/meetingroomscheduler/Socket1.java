@@ -42,7 +42,7 @@ public class Socket1 {
 			server = new ServerSocket(Variables.port, Variables.backlog, InetAddress.getLocalHost());
 			System.out.println("Server started");
 			System.out.println("Port        : " + server.getLocalPort());
-			System.out.println("Adress      : " + server.getInetAddress());
+			System.out.println("Address      : " + server.getInetAddress());
 			System.out.println("Backlog     : " + Variables.backlog);
 			System.out.println("Running server...");
 		} catch (IOException e) {
