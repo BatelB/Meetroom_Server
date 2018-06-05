@@ -9,7 +9,11 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Enumeration;
 
 public class Utils {
-	
+	/**
+	 * This function hashes the string using MD5 so we will not save the password as clear text
+	 * @param param
+	 * @return
+	 */
     public static String md5(String param){
     	try {
     		MessageDigest md = MessageDigest.getInstance("MD5");
