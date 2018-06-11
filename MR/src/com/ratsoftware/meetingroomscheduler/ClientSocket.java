@@ -11,17 +11,26 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-
+import java.util.Date;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.DateTime;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import com.mysql.jdbc.StringUtils;
+import java.time.format.DateTimeFormatter;
+
 /**
  * 
- * @author ilyafish
+ * @author ilyafish bbatel
  *
  */
 public class ClientSocket extends Thread {
@@ -37,9 +46,10 @@ public class ClientSocket extends Thread {
 		this.socket = clientSocket;
 		this.uid = uid;
 	}
+
 	/**
-	// Actually running the server, bringing up the socket and waiting for input
-	// stream
+	 * // Actually running the server, bringing up the socket and waiting for
+	 * input // stream
 	 * 
 	 */
 	public void run() {
@@ -54,7 +64,8 @@ public class ClientSocket extends Thread {
 		}
 
 		String line;
-		// We are making the server to listen to every packet that coming to our port
+		// We are making the server to listen to every packet that coming to our
+		// port
 		while (true) {
 			try {
 				line = bufferedReader.readLine();
@@ -63,103 +74,108 @@ public class ClientSocket extends Thread {
 					return;
 
 				} else {
-					// This will help us to follow the action that executed on the server, and which
+					// This will help us to follow the action that executed on
+					// the server, and which
 					// client is communicating with us
 					System.out.println("Package received from: " + uid);
 					//
-					//We are processing the request and checking if it of our conditions #1-#14 
+					// We are processing the request and checking if it of our
+					// conditions #1-#14
 					String response = processRequest(line);
 					System.out.println("Package sent to: " + uid);
 					send(response);
 				}
-			} catch (IOException e) {
+			} catch (IOException | ParseException e) {
 				e.printStackTrace();
 				clear();
 				return;
 			}
 		}
 	}
-	
-	/** 
-	  *All scenarios we are expecting the client to send us
-	  */
-	public String processRequest(String param) {
+
+	/**
+	 * All scenarios we are expecting the client to send us
+	 * @throws ParseException 
+	 */
+	public String processRequest(String param) throws ParseException {
 		try {
-			// JSON is the simplest key:value data structure to pass data, JSON can have
+			// JSON is the simplest key:value data structure to pass data, JSON
+			// can have
 			// multiple levels
 			JSONObject json = new JSONObject(param);
 			String action = json.getString("action");
 			System.out.println("action : " + action);
-			/** 
-			  *#1: The Log in part
-			  *
-			  **/
+			/**
+			 * #1: The Log in part
+			 *
+			 **/
 			if (action.equals("login_user")) {
 				return login_user(json.getString("email"), json.getString("password"));
-				
-				/** 
-				  *#2: Returning the room list and their properties
-				  *
-				  */
+
+				/**
+				 * #2: Returning the room list and their properties
+				 *
+				 */
 			} else if (action.equals("get_rooms_list")) {
 				return get_rooms_list(json.getString("email"), json.getString("password"));
-				/** 
-				  *#3: Returning the user list and their properties
-				  *
-				  */
+				/**
+				 * #3: Returning the user list and their properties
+				 *
+				 */
 			} else if (action.equals("get_users_list")) {
 				return get_users_list(json.getString("email"), json.getString("password"));
 				/**
-				// #4: Returning all scheduled meeting for specific room
+				 * // #4: Returning all scheduled meeting for specific room
 				 * 
 				 */
 			} else if (action.equals("get_schedule_for_room")) {
 				return get_schedule_for_room(json.getString("email"), json.getString("password"),
 						json.getString("room_id"));
 				/**
-				// #5: First creating a schedule and the update DB with each user id from the
-				// invitations String
+				 * // #5: First creating a schedule and the update DB with each
+				 * user id from the // invitations String
 				 * 
 				 */
 			} else if (action.equals("create_schedule")) {
 				return create_schedule(json.getString("email"), json.getString("password"), json.getString("room_id"),
 						json.getString("begin_time"), json.getString("end_time"), json.getString("invitations"));
-
-				// #6: First deleting a schedule and the update DB with each user id from the
+				// #6: First deleting a schedule and the update DB with each
+				// user id from the
 				// invitations String
 			} else if (action.equals("delete_schedule")) {
 				return delete_schedule(json.getString("email"), json.getString("password"), json.getString("id"));
 
-				// #7: Here we can edit the begin time the end time and the user we have invited
+				// #7: Here we can edit the begin time the end time and the user
+				// we have invited
 			} else if (action.equals("edit_schedule")) {
 				return edit_schedule(json.getString("email"), json.getString("password"), json.getString("schedule_id"),
 						json.getString("begin_time"), json.getString("begin_time"), json.getString("invitations"));
-				
-				//#8: Returns the schedule of the current user	
-			}  else if (action.equals("get_my_schedule")) {
+
+				// #8: Returns the schedule of the current user
+			} else if (action.equals("get_my_schedule")) {
 				return get_my_schedule(json.getString("email"), json.getString("password"));
 			}
-			//#9: Returning the scheduled room per id
+			// #9: Returning the scheduled room per id
 			else if (action.equals("get_schedule_by_id")) {
 				return get_schedule_by_id(json.getString("email"), json.getString("password"), json.getString("id"));
 			}
-			//#10: Create user, will work only for user with admin type
+			// #10: Create user, will work only for user with admin type
 			else if (action.equals("create_user")) {
 				return create_user(json.getString("email"), json.getString("password"), json.getString("new_email"),
 						json.getString("new_password"), json.getString("type"), json.getString("fullname"));
-			// #11: Delete user, will work only for user with admin type
+				// #11: Delete user, will work only for user with admin type
 			} else if (action.equals("delete_user")) {
 				return delete_user(json.getString("email"), json.getString("password"), json.getString("id"));
-			// #12: Create user, will work only for user with admin type	
+				// #12: Create user, will work only for user with admin type
 			} else if (action.equals("create_room")) {
 				return create_room(json.getString("email"), json.getString("password"), json.getString("number"),
 						json.getString("floor"), json.getString("chairs"), json.getString("equipment"));
-			//#13: Edit user, will work only for user with admin type	
+				// #13: Edit user, will work only for user with admin type
 			} else if (action.equals("edit_room")) {
 				return edit_room(json.getString("email"), json.getString("password"), json.getString("room_id"),
 						json.getString("number"), json.getString("floor"), json.getString("chairs"),
 						json.getString("equipment"));
-			//#14: Delete user, will work only for user with admin type	
+				// #14: Delete user, will work only for user with admin type
 			} else if (action.equals("delete_room")) {
 				return delete_room(json.getString("email"), json.getString("password"), json.getString("id"));
 			}
@@ -168,10 +184,10 @@ public class ClientSocket extends Thread {
 		}
 		return "";
 	}
-	
-		 
-	/** 
-	 *#1: The Log in part	
+
+	/**
+	 * #1: The Log in part
+	 * 
 	 * @param email
 	 * @param password
 	 * @return
@@ -197,7 +213,8 @@ public class ClientSocket extends Thread {
 
 			if (rs.next()) {
 				// If status returns true so the client will load Adapter by the
-				// type:AdminPage.class ,ReadWriteUserPage.class, ReadOnlyUserPage.class
+				// type:AdminPage.class ,ReadWriteUserPage.class,
+				// ReadOnlyUserPage.class
 				result.put("status", "true");
 				result.put("id", rs.getString("id"));
 				result.put("type", rs.getString("type"));
@@ -215,13 +232,13 @@ public class ClientSocket extends Thread {
 		return new JSONObject(result).toString();
 	}
 
-	/** 
-	 //* #2: Returning the room list and their properties
-	   * 
-	   * @param email
-	   * @param password
-	   * @return
-	   */
+	/**
+	 * //* #2: Returning the room list and their properties
+	 * 
+	 * @param email
+	 * @param password
+	 * @return
+	 */
 	public String get_rooms_list(String email, String password) {
 		String user_id = get_user_id(email, password);
 
@@ -260,6 +277,7 @@ public class ClientSocket extends Thread {
 
 	/**
 	 * #3: Returning the user list and their properties
+	 * 
 	 * @param email
 	 * @param password
 	 * @return
@@ -298,9 +316,10 @@ public class ClientSocket extends Thread {
 
 		return new JSONArray(result).toString();
 	}
-	
+
 	/**
-	 *#4: Returning all scheduled meeting for specific room 
+	 * #4: Returning all scheduled meeting for specific room
+	 * 
 	 * @param email
 	 * @param password
 	 * @param room_id
@@ -340,7 +359,9 @@ public class ClientSocket extends Thread {
 		return new JSONArray(result).toString();
 	}
 
-	/** #5: First creating a schedule and the update DB with each user id from the invitations String
+	/**
+	 * #5: First creating a schedule and the update DB with each user id from
+	 * the invitations String
 	 * 
 	 * @param email
 	 * @param password
@@ -349,9 +370,10 @@ public class ClientSocket extends Thread {
 	 * @param end_time
 	 * @param invitations
 	 * @return
+	 * @throws ParseException 
 	 */
 	public String create_schedule(String email, String password, String room_id, String begin_time, String end_time,
-			String invitations) {
+			String invitations) throws ParseException {
 
 		String user_id = get_user_id(email, password);
 
@@ -366,7 +388,13 @@ public class ClientSocket extends Thread {
 
 				Connection connection = DriverManager.getConnection(Variables.url, Variables.username,
 						Variables.password);
-				String query = "INSERT INTO schedule (room_id, manager_id, begin_time, end_time) VALUES('" + room_id
+				// ToDo: add logic
+				String bestRoom = findBestRoom(begin_time, end_time, invitations);
+				if(bestRoom == "-1")
+					return "no room availble";
+				else
+				{
+				String query = "INSERT INTO schedule (room_id, manager_id, begin_time, end_time) VALUES('" + bestRoom
 						+ "', '" + user_id + "', '" + begin_time + "', '" + end_time + "')";
 				System.out.println("query|" + query + "|");
 				Statement st = connection.createStatement();
@@ -397,16 +425,170 @@ public class ClientSocket extends Thread {
 				}
 
 				result = insert_id;
-
-			} catch (SQLException e) {
+				}
+			} catch (SQLException | JSONException e) {
 				e.printStackTrace();
 			}
 		}
 
 		return result;
 	}
-	
-	/** #6: First deleting a schedule and the update DB with each user id from the invitations String
+
+	private String findBestRoom(String begin_time, String end_time, String invitations) throws ParseException {
+
+		// Get all rooms
+		List<Room> rooms = getAllRooms();
+		
+		// remove busy rooms
+		List<Room> availbleRooms = removeBusyRooms(rooms, begin_time, end_time);
+		
+		if (availbleRooms.isEmpty())
+		{
+			return "-1";
+		}
+		
+		// Number of users invated to meeting 
+		int numInvitedUsers = getNumOfUsersInvited(invitations);
+		
+		String bestRoom = findSmallestDelta(availbleRooms, numInvitedUsers);
+		
+		return bestRoom;
+	}
+
+	private String findSmallestDelta(List<Room> availbleRooms, int numInvitedUsers) {
+	    
+		int index=-1;
+	    int minDelta= 1000;
+	    int currDelta;
+	    
+		for(int i=0;i<availbleRooms.size();i++)
+		{
+			currDelta = Integer.parseInt(availbleRooms.get(i).chairs) - numInvitedUsers ;
+			if(  currDelta >= 0)
+			{
+				if ( currDelta < minDelta )
+				{
+					minDelta = currDelta;
+					index = i;
+				}
+			}
+		}
+		
+		if (index == -1){
+			return "-1";
+		}
+		else {
+			return availbleRooms.get(index).id;
+		}
+	}
+
+	private int getNumOfUsersInvited(String invitations) {
+		  int count = 0;
+	      int i = 0;
+	      String pattern = "id";
+	        // Keep calling indexOf for the pattern.
+	        while ((i = invitations.indexOf(pattern, i)) != -1) {
+	            // Change starting index
+	            i += pattern.length();
+	            // Increment count.
+	            count++;
+	        }
+	        return count;
+	}
+
+	private List<Room> removeBusyRooms(List<Room> rooms, String begin_time, String end_time) throws ParseException {
+		List<Room> availbleRooms = rooms;
+		List<Schedule> schedules = getAllSchedules();
+		
+		for(int i=0;i<schedules.size();i++)
+		{
+			if (overlaps(begin_time, end_time, schedules.get(i).begin_time,schedules.get(i).end_time))
+			{
+				String roomToRemove = schedules.get(i).room_id;
+				availbleRooms = removeRoomFromList(availbleRooms,roomToRemove);
+			}
+		}
+		return availbleRooms;
+	}
+
+	private List<Room> removeRoomFromList(List<Room> availbleRooms, String roomToRemove) {
+		List<Room> newListOfrooms = availbleRooms;
+		
+		for(int i=0;i<newListOfrooms.size();i++)
+		{
+			if(newListOfrooms.get(i).id == roomToRemove)
+			{
+				newListOfrooms.remove(i);
+				return newListOfrooms;
+			}
+		}
+		return availbleRooms;
+	}
+
+	private boolean overlaps(String begin_time1, String end_time1, String begin_time2, String end_time2)
+			throws ParseException {
+		// DateTimeFormatter parser = DateTimeFormatter.ofPattern("yyyy-MM-dd
+		// HH:mm:ss");
+		// DateTime dt = parser.pa
+		// .parseDateTime(begin_time1);
+		//
+		Date startdate1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(begin_time1);
+		Date enddate1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(end_time1);
+		Date startdate2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(begin_time2);
+		Date enddate2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(end_time2);
+
+		if ((startdate1.before(startdate2) && enddate1.after(startdate2))
+				|| (startdate1.before(enddate2) && enddate1.after(enddate2))
+				|| (startdate1.before(startdate2) && enddate1.after(enddate2))) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	private List<Schedule> getAllSchedules() {
+		List<Schedule> schedules = new ArrayList<Schedule>();
+		try {
+			Connection connection = DriverManager.getConnection(Variables.url, Variables.username, Variables.password);
+			String query = "SELECT room_id, begin_time, end_time FROM schedule";
+			Statement st1 = connection.createStatement();
+			ResultSet rs1 = st1.executeQuery(query);
+			while (rs1.next()) {
+				String room_id = rs1.getString(1);
+				String begin_time = rs1.getString(2);
+				String end_time = rs1.getString(3);
+				schedules.add(new Schedule(room_id, begin_time, end_time));
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return schedules;
+	}
+
+	public List<Room> getAllRooms() {
+		List<Room> allRooms = new ArrayList<Room>();
+		try {
+
+			Connection connection = DriverManager.getConnection(Variables.url, Variables.username, Variables.password);
+			String query = "SELECT id, chairs FROM rooms";
+			Statement st1 = connection.createStatement();
+			ResultSet rs1 = st1.executeQuery(query);
+
+			while (rs1.next()) {
+				String id = rs1.getString(1);
+				String chairs = rs1.getString(2);
+				allRooms.add(new Room(id, chairs));
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		return allRooms;
+	}
+
+	/**
+	 * #6: First deleting a schedule and the update DB with each user id from
+	 * the invitations String
 	 * 
 	 * @param email
 	 * @param password
@@ -417,7 +599,7 @@ public class ClientSocket extends Thread {
 
 		String user_id = get_user_id(email, password);
 
-		//ArrayList<Map<String, String>> result = new ArrayList<>();
+		// ArrayList<Map<String, String>> result = new ArrayList<>();
 
 		if (user_id.equals("-1")) {
 			return "bad_request";
@@ -443,7 +625,9 @@ public class ClientSocket extends Thread {
 
 	}
 
-	/** #7: Here we can edit the begin time the end time and the user we have invited
+	/**
+	 * #7: Here we can edit the begin time the end time and the user we have
+	 * invited
 	 * 
 	 * @param email
 	 * @param password
@@ -452,9 +636,10 @@ public class ClientSocket extends Thread {
 	 * @param end_time
 	 * @param invitations
 	 * @return
+	 * @throws JSONException 
 	 */
 	public String edit_schedule(String email, String password, String schedule_id, String begin_time, String end_time,
-			String invitations) {
+			String invitations) throws JSONException {
 
 		String user_id = get_user_id(email, password);
 
@@ -494,46 +679,47 @@ public class ClientSocket extends Thread {
 		}
 
 	}
-	
-	/** #8: Returns the schedule of the current user
+
+	/**
+	 * #8: Returns the schedule of the current user
 	 * 
 	 * @param email
 	 * @param password
 	 * @return
 	 */
 	public String get_my_schedule(String email, String password) {
-	
+
 		String user_id = get_user_id(email, password);
-	
+
 		ArrayList<Map<String, String>> result = new ArrayList<>();
-	
+
 		if (user_id.equals("-1")) {
 			return "bad_request";
 		} else {
 			try {
-	
+
 				Connection connection = DriverManager.getConnection(Variables.url, Variables.username,
 						Variables.password);
 				String query = "SELECT * FROM invitations WHERE user_id = '" + user_id + "'";
 				Statement st1 = connection.createStatement();
 				ResultSet rs1 = st1.executeQuery(query);
-	
+
 				while (rs1.next()) {
 					String schedule_id = rs1.getString("schedule_id");
-	
+
 					query = "SELECT * FROM schedule WHERE id = '" + schedule_id + "'";
 					Statement st2 = connection.createStatement();
 					ResultSet rs2 = st2.executeQuery(query);
-	
+
 					if (rs2.next()) {
 						String room_id = rs2.getString("room_id");
 						String begin_time = rs2.getString("begin_time");
 						String end_time = rs2.getString("end_time");
-	
+
 						query = "SELECT * FROM rooms WHERE id = '" + room_id + "'";
 						Statement st3 = connection.createStatement();
 						ResultSet rs3 = st3.executeQuery(query);
-	
+
 						if (rs3.next()) {
 							Map<String, String> item = new HashMap<>();
 							item.put("room_id", room_id);
@@ -546,16 +732,17 @@ public class ClientSocket extends Thread {
 						}
 					}
 				}
-	
+
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}
 		}
-	
+
 		return new JSONArray(result).toString();
 	}
-	
-	/** #9: Returning the scheduled room per id
+
+	/**
+	 * #9: Returning the scheduled room per id
 	 * 
 	 * @param email
 	 * @param password
@@ -612,7 +799,7 @@ public class ClientSocket extends Thread {
 
 	/**
 	 * #10: Create user, will work only for user with admin type
-
+	 * 
 	 * @param email
 	 * @param password
 	 * @param new_email
@@ -650,6 +837,7 @@ public class ClientSocket extends Thread {
 
 	/**
 	 * #11: Delete user, will work only for user with admin type
+	 * 
 	 * @param email
 	 * @param password
 	 * @param id
@@ -677,9 +865,10 @@ public class ClientSocket extends Thread {
 
 		return "fail";
 	}
-	
+
 	/**
 	 * #12: Create user, will work only for user with admin type
+	 * 
 	 * @param email
 	 * @param password
 	 * @param number
@@ -713,9 +902,10 @@ public class ClientSocket extends Thread {
 
 		return "fail";
 	}
-	
-	/**	
+
+	/**
 	 * #13: Edit user, will work only for user with admin type
+	 * 
 	 * @param email
 	 * @param password
 	 * @param room_id
@@ -750,9 +940,10 @@ public class ClientSocket extends Thread {
 
 		return "fail";
 	}
-	
+
 	/**
 	 * #14: Delete user, will work only for user with admin type
+	 * 
 	 * @param email
 	 * @param password
 	 * @param id
@@ -781,8 +972,9 @@ public class ClientSocket extends Thread {
 		return "fail";
 	}
 
-	/** 
+	/**
 	 * Returning the unique user id by email and password
+	 * 
 	 * @param email
 	 * @param password
 	 * @return
@@ -802,9 +994,10 @@ public class ClientSocket extends Thread {
 		}
 		return "-1";
 	}
-	
+
 	/**
 	 * checking if this user has admin permissions
+	 * 
 	 * @param user_id
 	 * @return
 	 */
@@ -826,7 +1019,8 @@ public class ClientSocket extends Thread {
 	}
 
 	/**
-	 *The server sending its response to the client  
+	 * The server sending its response to the client
+	 * 
 	 * @param data
 	 */
 	public void send(String data) {
@@ -839,6 +1033,7 @@ public class ClientSocket extends Thread {
 			clear();
 		}
 	}
+
 	/**
 	 * finished the connections for this uid
 	 */

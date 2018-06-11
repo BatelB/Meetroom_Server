@@ -11,5 +11,11 @@
 	<classpathentry kind="lib" path="dependency/json-20170516.jar"/>
 	<classpathentry kind="lib" path="dependency/mysql-connector-java-5.1.41-bin.jar"/>
 	<classpathentry kind="lib" path="dependency/org.osgi.foundation-1.2.0.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Batel/Documents/GitHub/Meetroom_Server/MR/dependency/joda-time-2.10.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Batel/Documents/GitHub/Meetroom_Server/MR/dependency/commons-lang3-3.7-test-sources.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Batel/Documents/GitHub/Meetroom_Server/MR/dependency/commons-lang3-3.7.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Batel/Documents/GitHub/Meetroom_Server/MR/dependency/commons-lang3-3.7-javadoc.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Batel/Documents/GitHub/Meetroom_Server/MR/dependency/commons-lang3-3.7-sources.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Batel/Documents/GitHub/Meetroom_Server/MR/dependency/commons-lang3-3.7-tests.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

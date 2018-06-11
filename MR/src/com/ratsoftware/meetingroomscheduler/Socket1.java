@@ -20,13 +20,19 @@ import java.sql.Statement;
 
 public class Socket1 {
 	/**
-	 * @param port the port number, or 0 to use a port number that is automatically allocated.
-	 * @param backlog requested maximum length of the queue of incoming connections.
-	 * @param bindAddr the local InetAddress the server will bind to
+	 * @param port
+	 *            the port number, or 0 to use a port number that is
+	 *            automatically allocated.
+	 * @param backlog
+	 *            requested maximum length of the queue of incoming connections.
+	 * @param bindAddr
+	 *            the local InetAddress the server will bind to
 	 */
 	public static ServerSocket server = null;
+
 	/**
 	 * The main of our project that starts everything
+	 * 
 	 * @param args
 	 */
 	public static void main(String args[]) {
@@ -43,13 +49,14 @@ public class Socket1 {
 			e.printStackTrace();
 			return;
 		}
-		
+
 		try {
 			System.out.println("Opening socket...");
 			/**
-			 * Initializing the server connection,create a server with the specified port, listen backlog, and local IP address to bind to
+			 * Initializing the server connection,create a server with the
+			 * specified port, listen backlog, and local IP address to bind to
 			 * 
-			*/
+			 */
 			server = new ServerSocket(Variables.port, Variables.backlog, InetAddress.getLocalHost());
 			System.out.println("Server started");
 			System.out.println("Port        : " + server.getLocalPort());
