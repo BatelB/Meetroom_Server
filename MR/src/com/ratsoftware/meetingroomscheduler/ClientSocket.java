@@ -424,7 +424,7 @@ public class ClientSocket extends Thread {
 					st.executeUpdate(query);
 				}
 
-				result = insert_id;
+				result = insert_id + "," +bestRoom;
 				}
 			} catch (SQLException | JSONException e) {
 				e.printStackTrace();
@@ -438,21 +438,25 @@ public class ClientSocket extends Thread {
 
 		// Get all rooms
 		List<Room> rooms = getAllRooms();
+		System.out.println("All rooms: " + printListOfRooms(rooms));// R1
 		
 		// remove busy rooms
 		List<Room> availbleRooms = removeBusyRooms(rooms, begin_time, end_time);
-		
+		System.out.println("availbleRooms: " + printListOfRooms(availbleRooms));// R1
 		if (availbleRooms.isEmpty())
 		{
 			return "-1";
 		}
-		
-		// Number of users invated to meeting 
+		else{
+		// Number of users invited to meeting 
 		int numInvitedUsers = getNumOfUsersInvited(invitations);
+		System.out.println("numInvitedUsers: " + numInvitedUsers); // R1
 		
 		String bestRoom = findSmallestDelta(availbleRooms, numInvitedUsers);
+		System.out.println("bestRoom: " + bestRoom);// R1
 		
 		return bestRoom;
+		}
 	}
 
 	private String findSmallestDelta(List<Room> availbleRooms, int numInvitedUsers) {
@@ -464,6 +468,7 @@ public class ClientSocket extends Thread {
 		for(int i=0;i<availbleRooms.size();i++)
 		{
 			currDelta = Integer.parseInt(availbleRooms.get(i).chairs) - numInvitedUsers ;
+			System.out.println("the delta for room: " + availbleRooms.get(i).id + "is: " + currDelta);// R1
 			if(  currDelta >= 0)
 			{
 				if ( currDelta < minDelta )
@@ -478,6 +483,7 @@ public class ClientSocket extends Thread {
 			return "-1";
 		}
 		else {
+			System.out.println("best Room from delta: " + availbleRooms.get(index).id);// R1
 			return availbleRooms.get(index).id;
 		}
 	}
@@ -506,23 +512,38 @@ public class ClientSocket extends Thread {
 			{
 				String roomToRemove = schedules.get(i).room_id;
 				availbleRooms = removeRoomFromList(availbleRooms,roomToRemove);
+				System.out.println("removeBusyRooms - availbleRooms List Of Rooms: "+ printListOfRooms(availbleRooms)) ;// R1	
+				
 			}
 		}
 		return availbleRooms;
 	}
 
+	private String printListOfRooms (List<Room> roomsList){
+		String rooms = "list: ";
+		for (int i=0;i<roomsList.size();i++)
+		{
+			rooms = rooms + " {room id: " + roomsList.get(i).id +  " chairs: " + roomsList.get(i).chairs +"}  ";
+		}
+		return rooms; 
+	}
 	private List<Room> removeRoomFromList(List<Room> availbleRooms, String roomToRemove) {
 		List<Room> newListOfrooms = availbleRooms;
+		System.out.println("removeRoomFromList - room to remove "+ roomToRemove) ;// R1	
 		
 		for(int i=0;i<newListOfrooms.size();i++)
 		{
-			if(newListOfrooms.get(i).id == roomToRemove)
+			if(newListOfrooms.get(i).id.equals(roomToRemove))
 			{
+				System.out.println("removeRoomFromList - removed room "+ newListOfrooms.get(i).id) ;// R1	
 				newListOfrooms.remove(i);
+				
+				System.out.println("removeRoomFromList - newListOfrooms: "+ printListOfRooms(newListOfrooms)+ " \n /n   ") ;// R1					
 				return newListOfrooms;
+	
 			}
 		}
-		return availbleRooms;
+		return newListOfrooms;
 	}
 
 	private boolean overlaps(String begin_time1, String end_time1, String begin_time2, String end_time2)
@@ -539,9 +560,11 @@ public class ClientSocket extends Thread {
 
 		if ((startdate1.before(startdate2) && enddate1.after(startdate2))
 				|| (startdate1.before(enddate2) && enddate1.after(enddate2))
-				|| (startdate1.before(startdate2) && enddate1.after(enddate2))) {
+				|| (startdate1.before(startdate2) && enddate1.after(enddate2))) {	
+			System.out.println("data1: "+ begin_time1 +" - "+ end_time1 +"data2: "+ begin_time2 +" - "+  end_time2 + " overlaps = true") ;// R1
 			return true;
 		} else {
+			System.out.println("data1: "+ begin_time1 +" - "+ end_time1 +"data2: "+ begin_time2 +" - "+  end_time2 + " overlaps = false") ;// R1
 			return false;
 		}
 	}

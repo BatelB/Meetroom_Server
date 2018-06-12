@@ -8,4 +8,7 @@ public class Room {
 	  public Room(String id, String chairs) {
 		  this.id = id;
 		  this.chairs=chairs;	
-}}
+}
+
+	  
+}
