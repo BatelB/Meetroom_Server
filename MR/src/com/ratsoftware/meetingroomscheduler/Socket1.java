@@ -18,6 +18,16 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+/**
+ * The Main Class that starts the program configuring the listening socket and the connection to DB
+ * @param port
+ *            the port number, or 0 to use a port number that is
+ *            automatically allocated.
+ * @param backlog
+ *            requested maximum length of the queue of incoming connections.
+ * @param bindAddr
+ *            the local InetAddress the server will bind to
+ */
 public class Socket1 {
 	/**
 	 * @param port

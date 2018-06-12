@@ -1,5 +1,9 @@
 package com.ratsoftware.meetingroomscheduler;
 
+/**
+ * Represent Schedule Class with its properties
+ * 
+ */
 public class Schedule {
 
 	String room_id;

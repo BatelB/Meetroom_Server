@@ -1,5 +1,10 @@
 package com.ratsoftware.meetingroomscheduler;
 
+/**
+ * 
+ * @author ilyafish bbatel
+ * Represent the socket that the servers configuring
+ */
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -29,9 +34,8 @@ import com.mysql.jdbc.StringUtils;
 import java.time.format.DateTimeFormatter;
 
 /**
+ * Represent the socket that the servers configuring
  * 
- * @author ilyafish bbatel
- *
  */
 public class ClientSocket extends Thread {
 
@@ -48,8 +52,8 @@ public class ClientSocket extends Thread {
 	}
 
 	/**
-	 * // Actually running the server, bringing up the socket and waiting for
-	 * input // stream
+	 * // Actually running the server, bringing up the socket and waiting for input
+	 * // stream
 	 * 
 	 */
 	public void run() {
@@ -95,7 +99,8 @@ public class ClientSocket extends Thread {
 
 	/**
 	 * All scenarios we are expecting the client to send us
-	 * @throws ParseException 
+	 * 
+	 * @throws ParseException
 	 */
 	public String processRequest(String param) throws ParseException {
 		try {
@@ -132,8 +137,8 @@ public class ClientSocket extends Thread {
 				return get_schedule_for_room(json.getString("email"), json.getString("password"),
 						json.getString("room_id"));
 				/**
-				 * // #5: First creating a schedule and the update DB with each
-				 * user id from the // invitations String
+				 * // #5: First creating a schedule and the update DB with each user id from the
+				 * // invitations String
 				 * 
 				 */
 			} else if (action.equals("create_schedule")) {
@@ -360,8 +365,8 @@ public class ClientSocket extends Thread {
 	}
 
 	/**
-	 * #5: First creating a schedule and the update DB with each user id from
-	 * the invitations String
+	 * #5: First creating a schedule and the update DB with each user id from the
+	 * invitations String
 	 * 
 	 * @param email
 	 * @param password
@@ -370,7 +375,7 @@ public class ClientSocket extends Thread {
 	 * @param end_time
 	 * @param invitations
 	 * @return
-	 * @throws ParseException 
+	 * @throws ParseException
 	 */
 	public String create_schedule(String email, String password, String room_id, String begin_time, String end_time,
 			String invitations) throws ParseException {
@@ -390,41 +395,40 @@ public class ClientSocket extends Thread {
 						Variables.password);
 				// ToDo: add logic
 				String bestRoom = findBestRoom(begin_time, end_time, invitations);
-				if(bestRoom == "-1")
+				if (bestRoom == "-1")
 					return "no room availble";
-				else
-				{
-				String query = "INSERT INTO schedule (room_id, manager_id, begin_time, end_time) VALUES('" + bestRoom
-						+ "', '" + user_id + "', '" + begin_time + "', '" + end_time + "')";
-				System.out.println("query|" + query + "|");
-				Statement st = connection.createStatement();
-				st.executeUpdate(query, Statement.RETURN_GENERATED_KEYS);
+				else {
+					String query = "INSERT INTO schedule (room_id, manager_id, begin_time, end_time) VALUES('"
+							+ bestRoom + "', '" + user_id + "', '" + begin_time + "', '" + end_time + "')";
+					System.out.println("query|" + query + "|");
+					Statement st = connection.createStatement();
+					st.executeUpdate(query, Statement.RETURN_GENERATED_KEYS);
 
-				String insert_id = "-1";
-				ResultSet rs = st.getGeneratedKeys();
-				if (rs.next()) {
-					System.out.println("rs.next()");
-					insert_id = Integer.toString(rs.getInt(1));
-				} else {
-					System.out.println("NOT rs.next()");
-				}
-				rs.close();
+					String insert_id = "-1";
+					ResultSet rs = st.getGeneratedKeys();
+					if (rs.next()) {
+						System.out.println("rs.next()");
+						insert_id = Integer.toString(rs.getInt(1));
+					} else {
+						System.out.println("NOT rs.next()");
+					}
+					rs.close();
 
-				System.out.println("Create schedule insert id: " + insert_id);
+					System.out.println("Create schedule insert id: " + insert_id);
 
-				if (insert_id.equals("-1"))
-					return "database error";
+					if (insert_id.equals("-1"))
+						return "database error";
 
-				JSONArray json_array = new JSONArray(invitations);
-				for (int i = 0; i < json_array.length(); i++) {
-					JSONObject json_object = json_array.getJSONObject(i);
-					String invited_id = json_object.getString("id");
-					query = "INSERT INTO invitations(schedule_id, user_id) VALUES ('" + insert_id + "', '" + invited_id
-							+ "')";
-					st.executeUpdate(query);
-				}
+					JSONArray json_array = new JSONArray(invitations);
+					for (int i = 0; i < json_array.length(); i++) {
+						JSONObject json_object = json_array.getJSONObject(i);
+						String invited_id = json_object.getString("id");
+						query = "INSERT INTO invitations(schedule_id, user_id) VALUES ('" + insert_id + "', '"
+								+ invited_id + "')";
+						st.executeUpdate(query);
+					}
 
-				result = insert_id + "," +bestRoom;
+					result = insert_id;
 				}
 			} catch (SQLException | JSONException e) {
 				e.printStackTrace();
@@ -434,118 +438,131 @@ public class ClientSocket extends Thread {
 		return result;
 	}
 
+	/**
+	 * Chooses the best available room and returning the id_room
+	 * 
+	 * @param begin_time
+	 * @param end_time
+	 * @param invitations
+	 * @return
+	 * @throws ParseException
+	 */
 	private String findBestRoom(String begin_time, String end_time, String invitations) throws ParseException {
 
 		// Get all rooms
 		List<Room> rooms = getAllRooms();
-		System.out.println("All rooms: " + printListOfRooms(rooms));// R1
-		
+
 		// remove busy rooms
 		List<Room> availbleRooms = removeBusyRooms(rooms, begin_time, end_time);
-		System.out.println("availbleRooms: " + printListOfRooms(availbleRooms));// R1
-		if (availbleRooms.isEmpty())
-		{
+
+		if (availbleRooms.isEmpty()) {
 			return "-1";
 		}
-		else{
-		// Number of users invited to meeting 
+
+		// Number of users invated to meeting
 		int numInvitedUsers = getNumOfUsersInvited(invitations);
-		System.out.println("numInvitedUsers: " + numInvitedUsers); // R1
-		
+
 		String bestRoom = findSmallestDelta(availbleRooms, numInvitedUsers);
-		System.out.println("bestRoom: " + bestRoom);// R1
-		
+
 		return bestRoom;
-		}
 	}
 
+	/**
+	 * Returns the smallest gap between available room size to number of meeting
+	 * members
+	 * 
+	 * @param availbleRooms
+	 * @param numInvitedUsers
+	 * @return
+	 */
 	private String findSmallestDelta(List<Room> availbleRooms, int numInvitedUsers) {
-	    
-		int index=-1;
-	    int minDelta= 1000;
-	    int currDelta;
-	    
-		for(int i=0;i<availbleRooms.size();i++)
-		{
-			currDelta = Integer.parseInt(availbleRooms.get(i).chairs) - numInvitedUsers ;
-			System.out.println("the delta for room: " + availbleRooms.get(i).id + "is: " + currDelta);// R1
-			if(  currDelta >= 0)
-			{
-				if ( currDelta < minDelta )
-				{
+
+		int index = -1;
+		int minDelta = 1000;
+		int currDelta;
+
+		for (int i = 0; i < availbleRooms.size(); i++) {
+			currDelta = Integer.parseInt(availbleRooms.get(i).chairs) - numInvitedUsers;
+			if (currDelta >= 0) {
+				if (currDelta < minDelta) {
 					minDelta = currDelta;
 					index = i;
 				}
 			}
 		}
-		
-		if (index == -1){
+
+		if (index == -1) {
 			return "-1";
-		}
-		else {
-			System.out.println("best Room from delta: " + availbleRooms.get(index).id);// R1
+		} else {
 			return availbleRooms.get(index).id;
 		}
 	}
 
 	private int getNumOfUsersInvited(String invitations) {
-		  int count = 0;
-	      int i = 0;
-	      String pattern = "id";
-	        // Keep calling indexOf for the pattern.
-	        while ((i = invitations.indexOf(pattern, i)) != -1) {
-	            // Change starting index
-	            i += pattern.length();
-	            // Increment count.
-	            count++;
-	        }
-	        return count;
+		int count = 0;
+		int i = 0;
+		String pattern = "id";
+		// Keep calling indexOf for the pattern.
+		while ((i = invitations.indexOf(pattern, i)) != -1) {
+			// Change starting index
+			i += pattern.length();
+			// Increment count.
+			count++;
+		}
+		return count;
 	}
 
+	/**
+	 * Removes not available room from the available room list
+	 * 
+	 * @param rooms
+	 * @param begin_time
+	 * @param end_time
+	 * @return
+	 * @throws ParseException
+	 */
 	private List<Room> removeBusyRooms(List<Room> rooms, String begin_time, String end_time) throws ParseException {
 		List<Room> availbleRooms = rooms;
 		List<Schedule> schedules = getAllSchedules();
-		
-		for(int i=0;i<schedules.size();i++)
-		{
-			if (overlaps(begin_time, end_time, schedules.get(i).begin_time,schedules.get(i).end_time))
-			{
+
+		for (int i = 0; i < schedules.size(); i++) {
+			if (overlaps(begin_time, end_time, schedules.get(i).begin_time, schedules.get(i).end_time)) {
 				String roomToRemove = schedules.get(i).room_id;
-				availbleRooms = removeRoomFromList(availbleRooms,roomToRemove);
-				System.out.println("removeBusyRooms - availbleRooms List Of Rooms: "+ printListOfRooms(availbleRooms)) ;// R1	
-				
+				availbleRooms = removeRoomFromList(availbleRooms, roomToRemove);
 			}
 		}
 		return availbleRooms;
 	}
 
-	private String printListOfRooms (List<Room> roomsList){
-		String rooms = "list: ";
-		for (int i=0;i<roomsList.size();i++)
-		{
-			rooms = rooms + " {room id: " + roomsList.get(i).id +  " chairs: " + roomsList.get(i).chairs +"}  ";
-		}
-		return rooms; 
-	}
+	/**
+	 * Removes the given room from the list and return the new list
+	 * 
+	 * @param availbleRooms
+	 * @param roomToRemove
+	 * @return
+	 */
 	private List<Room> removeRoomFromList(List<Room> availbleRooms, String roomToRemove) {
 		List<Room> newListOfrooms = availbleRooms;
-		System.out.println("removeRoomFromList - room to remove "+ roomToRemove) ;// R1	
-		
-		for(int i=0;i<newListOfrooms.size();i++)
-		{
-			if(newListOfrooms.get(i).id.equals(roomToRemove))
-			{
-				System.out.println("removeRoomFromList - removed room "+ newListOfrooms.get(i).id) ;// R1	
+
+		for (int i = 0; i < newListOfrooms.size(); i++) {
+			if (newListOfrooms.get(i).id == roomToRemove) {
 				newListOfrooms.remove(i);
-				
-				System.out.println("removeRoomFromList - newListOfrooms: "+ printListOfRooms(newListOfrooms)+ " \n /n   ") ;// R1					
 				return newListOfrooms;
-	
 			}
 		}
-		return newListOfrooms;
+		return availbleRooms;
 	}
 
+	/**
+	 * Checks if 2 given dates interacts
+	 * 
+	 * @param begin_time1
+	 * @param end_time1
+	 * @param begin_time2
+	 * @param end_time2
+	 * @return
+	 * @throws ParseException
+	 */
 	private boolean overlaps(String begin_time1, String end_time1, String begin_time2, String end_time2)
 			throws ParseException {
 		// DateTimeFormatter parser = DateTimeFormatter.ofPattern("yyyy-MM-dd
@@ -560,15 +577,18 @@ public class ClientSocket extends Thread {
 
 		if ((startdate1.before(startdate2) && enddate1.after(startdate2))
 				|| (startdate1.before(enddate2) && enddate1.after(enddate2))
-				|| (startdate1.before(startdate2) && enddate1.after(enddate2))) {	
-			System.out.println("data1: "+ begin_time1 +" - "+ end_time1 +"data2: "+ begin_time2 +" - "+  end_time2 + " overlaps = true") ;// R1
+				|| (startdate1.before(startdate2) && enddate1.after(enddate2))) {
 			return true;
 		} else {
-			System.out.println("data1: "+ begin_time1 +" - "+ end_time1 +"data2: "+ begin_time2 +" - "+  end_time2 + " overlaps = false") ;// R1
 			return false;
 		}
 	}
 
+	/**
+	 * Returning all scheduled meeting from the DB
+	 * 
+	 * @return
+	 */
 	private List<Schedule> getAllSchedules() {
 		List<Schedule> schedules = new ArrayList<Schedule>();
 		try {
@@ -588,6 +608,11 @@ public class ClientSocket extends Thread {
 		return schedules;
 	}
 
+	/**
+	 * Returning all the rooms items from the DB
+	 * 
+	 * @return
+	 */
 	public List<Room> getAllRooms() {
 		List<Room> allRooms = new ArrayList<Room>();
 		try {
@@ -610,8 +635,8 @@ public class ClientSocket extends Thread {
 	}
 
 	/**
-	 * #6: First deleting a schedule and the update DB with each user id from
-	 * the invitations String
+	 * #6: First deleting a schedule and the update DB with each user id from the
+	 * invitations String
 	 * 
 	 * @param email
 	 * @param password
@@ -649,8 +674,7 @@ public class ClientSocket extends Thread {
 	}
 
 	/**
-	 * #7: Here we can edit the begin time the end time and the user we have
-	 * invited
+	 * #7: Here we can edit the begin time the end time and the user we have invited
 	 * 
 	 * @param email
 	 * @param password
@@ -659,7 +683,7 @@ public class ClientSocket extends Thread {
 	 * @param end_time
 	 * @param invitations
 	 * @return
-	 * @throws JSONException 
+	 * @throws JSONException
 	 */
 	public String edit_schedule(String email, String password, String schedule_id, String begin_time, String end_time,
 			String invitations) throws JSONException {
